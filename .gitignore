@@ -1,0 +1,89 @@
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.pyre/
+.tox/
+.nox/
+.hypothesis/
+
+# Coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Notebooks / local settings
+.ipynb_checkpoints/
+
+# -----------------------------
+# Zig
+# -----------------------------
+zig-cache/
+zig-out/
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+*.pdb
+
+# -----------------------------
+# LaTeX
+# -----------------------------
+# Auxiliary and intermediate files
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.idx
+*.ilg
+*.ind
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.synctex.gz
+*.xdv
+*.nav
+*.snm
+*.vrb
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.ist
+
+# Build directories
+_minted*/
+
+# PDFs are usually build artifacts (remove this line if you want to version PDFs)
+*.pdf

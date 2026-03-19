@@ -1,0 +1,114 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{float}
+\usepackage{natbib}
+
+\begin{document}
+
+\section{ENBASE: ENTROPY-BASED SELECTION}
+As established, according to state-of-the-art studies in Information Theory, Entropy is a mathematical and statistical tool used to measure the degree of disorder and information gain in a system.
+As a result, decreasing the Entropy within an information system increases the predictability of outcomes.
+In this context, the proposed algorithm extracts informative components by selecting the most informative samples, which are those with the highest information gain, within each subset.
+Building on this concept, creating a data subset with reduced redundancy and noise is possible, which ensures a higher quality of the data subset.
+Consequently, neural networks can be trained more efficiently and at lower computational costs.
+The Algorithm~\ref{alg:enbase}~\citep{neto2025Enbase,neto2025Adding} is designed to be implemented in embedded systems, whether centralized servers or IoT devices.
+Specifically, among these devices is the most representative dataset from each data subset, using Entropy to identify the most informative and representative data.
+As illustrated in Figure 5, the proposed model interacts with both the centralized and decentralized environments, as shown in Figure 4.
+Thus, the EnBaSe algorithm applies an entropy-driven selection method across various subsets, selecting the lower half of the entropy values for each class.
+This technique creates a more homogeneous sample within each subset and ensures a balanced representation in both centralized and decentralized contexts, thereby reducing computational, energy, and time costs.
+The algorithm is embedded and receives training sets and labels, represented by Initialization, which occurs by creating two sets for data storage: $X$ selected and $Y_{selected}$.
+The algorithm iterates over each class from 0 to K-1, calculating the Entropy and measuring the degree of disorder for each image in each class.
+Finally, it retains samples with entropy below the class median.
+It returns the selected data in $X$ selected and $Y_{selected}$, which serve as input for training.
+Algorithm~\ref{alg:enbase} is as follows:
+
+where
+\begin{itemize}
+  \item $K$: Represents the total number of classes in the dataset.
+  \item $X_{train}$: Training Dataset.
+  \item $Y_{train}$: Labels corresponding to the training set $X_{train}$.
+  \item $X_{selected}$: Subset $X_{train}$ selected by the algorithm based on entropy.
+  \item $Y_{selected}$: Labels corresponding to subset $X_{selected}$.
+  \item \textbf{label}: A class label ($K$ - 1, where $K$ is the total number of classes).
+  \item \textbf{C}: Set of indices belonging to a given class label.
+  \item \textbf{MEntropy}: An array that stores pairs (index, entropy value) for each image in a given class.
+  \item \textbf{ComputeEntropy(image)}: A function that calculates the entropy of an image.
+  \item \textbf{Median}: Median entropy values in the set \textbf{MEntropy}.
+  \item \textbf{IQualified}: Set of indices of samples with Entropy less than or equal to the median, $X_{selected}$ and $Y_{selected}$.
+  \item \textbf{H}: Entropy calculated for the image.
+  \item \textbf{p(image)}: Probability of the image, calculated using the image represented as a one-dimensional (1D) array
+\end{itemize}
+
+\begin{algorithm}[H]
+\label{alg:enbase}
+\caption{EnBaSe. Where $K$ Denotes the Total Number of Classes}
+\begin{algorithmic}[1]
+\Require $X_{train}, Y_{train}, K$
+\Ensure Selected classes based on Entropy
+\State $X_{selected} \gets \emptyset$
+\State $Y_{selected} \gets \emptyset$
+\For{$label \gets 0$ \textbf{to} $K-1$}
+  \State $C \gets$ Retrieve indices belonging to class label
+  \State $M_{Entropy} \gets \emptyset$
+  \For{each sample $\in C$}
+    \State $M_{Entropy} \gets M_{Entropy} \cup \{(key, \Call{ComputeEntropy}{image})\}$
+  \EndFor
+  \State Sort $M_{Entropy}$ by $\Call{ComputeEntropy}{image}$
+  \State $median \gets$ median of $M_{Entropy}$
+  \State $I_{Qualified} \gets \emptyset$
+  \For{each key $\in M_{Entropy}$}
+    \If{$key.entropy \le median$}
+      \State Append $key.index$ to $I_{Qualified}$
+    \EndIf
+  \EndFor
+  \For{each $i \in I_{Qualified}$}
+    \State Append $X_{train}[i]$ to $X_{selected}$
+    \State Append $Y_{train}[i]$ to $Y_{selected}$
+  \EndFor
+\EndFor
+\State \Return $X_{selected}, Y_{selected}$
+\\
+\Function{ComputeEntropy}{image}
+  \State $H \gets -\sum_{a} p(image)\log_{2}(p(image))$
+  \State \Return $H$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm~\ref{alg:enbase} operates through several stages, detailed as follows:
+
+\begin{itemize}
+  \item Initialization: Two empty sets (Xselected and Yselected), are created to store the selected data and their corresponding classes.
+  \item Iteration over classes: The algorithm iterates through each class present in the training set (Xtrain and Ytrain),identifying the indices associated with each class.
+  \item Entropy computation: For each element in the current class, the ComputeEntropy function calculates the Entropy of the sample based on the probability distribution of its attributes. The results appear as (index, ComputeEntropy) pairs in MEntropy, which is also referred to as the entropy map.
+  \item Sorting and median-based selection: The MEntropy pairs are sorted by Entropy, and the median entropy value is calculated. Only elements with entropy values less than or equal to the median are selected, ensuring the inclusion of the most representative and least redundant data.
+  \item Updating the selected subsets: The selected indices are used to copy the corresponding data from Xtrain and Ytrain to the subsets Xselected and Yselected.
+  \item Final output: At the end of the Iteration over all classes, the subsets Xselected and Yselected contain the most informative and homogeneous data, optimized for model training.
+\end{itemize}
+
+In summary, the algorithm proposed in this study, Algorithm~\ref{alg:enbase}, utilizes entropy as a metric to identify relevant data subsets for each class, thereby reducing redundancy and noise while enhancing the quality of the selected data.
+The choice of lower Entropy is grounded in Information Theory, which asserts that systems with lower Entropy exhibit greater predictability.
+In addition to its data selection strategy, the EnBaSe is designed to operate independently, ensuring broad applicability across different FL methods.
+This design choice means that EnBaSe operates independently of an embedded design.
+The approach remains decoupled from any specific FL algorithm.
+As a result, our algorithm is general-purpose and compatible with any global aggregation method.
+This design provides practical advantages in scenarios where computational resources are limited.
+Thus, the data subsets are structured homogeneously to optimize the training process.
+For instance, in medical classification systems with computational power constraints, Algorithm~\ref{alg:enbase} prioritizes more informative and less redundant features, reducing the computational effort required by the neural network. 
+This approach enables rapid and highly accurate responses in real-time IoT systems.
+
+
+
+\section{SPATIAL-ENBASE}
+
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
