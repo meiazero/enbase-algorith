@@ -53,6 +53,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_mnist(max_train: int, max_test: int, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    # Load canonical MNIST from OpenML to keep replication simple and portable.
     X, y = fetch_openml(name=MNIST_NAME, version=1, return_X_y=True, as_frame=False)
 
     # OpenML returns float64 values in [0, 255] and labels as strings.
@@ -81,22 +82,29 @@ def subsample(X: np.ndarray, y: np.ndarray, limit: int, seed: int) -> tuple[np.n
 
 
 def image_entropy(image: np.ndarray, bins: int = N_BINS) -> float:
+    # Entropy H = -sum(p * log2(p)) over pixel-intensity distribution.
     counts = np.bincount(image, minlength=bins)
     probs = counts[counts > 0] / image.size
     return float(-np.sum(probs * np.log2(probs)))
 
 
 def select_indices_by_enbase(X_train: np.ndarray, y_train: np.ndarray, n_classes: int = N_CLASSES) -> np.ndarray:
+    # This function is the direct implementation of EnBaSe.
     selected_indices: list[np.ndarray] = []
 
     for label in range(n_classes):
+        # C <- indices of samples belonging to the current class.
         class_indices = np.flatnonzero(y_train == label)
         if class_indices.size == 0:
             continue
 
+        # MEntropy <- (sample_index, entropy) map for the current class.
         class_entropies = np.array([image_entropy(X_train[idx]) for idx in class_indices], dtype=np.float64)
+
+        # median <- class entropy median.
         median_entropy = float(np.median(class_entropies))
 
+        # IQualified <- samples with entropy <= median.
         keep_mask = class_entropies <= median_entropy
         selected_indices.append(class_indices[keep_mask])
 
@@ -107,6 +115,7 @@ def select_indices_by_enbase(X_train: np.ndarray, y_train: np.ndarray, n_classes
 
 
 def run_enbase(X_train: np.ndarray, y_train: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    # Return X_selected and Y_selected as defined in the paper pseudocode.
     selected_idx = select_indices_by_enbase(X_train, y_train, n_classes=N_CLASSES)
     return X_train[selected_idx], y_train[selected_idx]
 
@@ -117,6 +126,7 @@ def train_and_eval(
     X_test: np.ndarray,
     y_test: np.ndarray,
 ) -> float:
+    # A simple baseline model to compare full training vs EnBaSe-selected training.
     model = LogisticRegression(
         solver="saga",
         multi_class="multinomial",
@@ -150,9 +160,11 @@ def main() -> None:
     X_train_scaled = scale_pixels(X_train)
     X_test_scaled = scale_pixels(X_test)
 
+    # Apply EnBaSe on raw pixel values (uint8) to match entropy computation assumptions.
     X_selected, y_selected = run_enbase(X_train, y_train)
     X_selected_scaled = scale_pixels(X_selected)
 
+    # Evaluate both training strategies on the same test split.
     full_acc = train_and_eval(X_train_scaled, y_train, X_test_scaled, y_test)
     enbase_acc = train_and_eval(X_selected_scaled, y_selected, X_test_scaled, y_test)
 

@@ -27,6 +27,7 @@ fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
 }
 
 fn loadMnist(allocator: std.mem.Allocator, images_path: []const u8, labels_path: []const u8) !MnistData {
+    // Read raw IDX files to keep dependencies minimal and reproducible.
     const image_file = try readFileAlloc(allocator, images_path);
     errdefer allocator.free(image_file);
 
@@ -76,6 +77,7 @@ fn loadMnist(allocator: std.mem.Allocator, images_path: []const u8, labels_path:
 }
 
 fn imageEntropy(image: []const u8) f64 {
+    // Entropy H = -sum(p * log2(p)) over the 256 gray-level histogram.
     var histogram = [_]u32{0} ** PixelBins;
     for (image) |px| {
         histogram[px] += 1;
@@ -132,11 +134,13 @@ fn enbaseSelectIndices(
     labels: []const u8,
     image_size: usize,
 ) ![]usize {
+    // Direct implementation of EnBaSe (returns selected global indices).
     var selected: std.ArrayList(usize) = .empty;
     errdefer selected.deinit(allocator);
 
     var class_id: u8 = 0;
     while (class_id < ClassCount) : (class_id += 1) {
+        // C <- indices belonging to the current class.
         var class_indices = try collectClassIndices(allocator, labels, class_id);
         defer class_indices.deinit(allocator);
 
@@ -145,14 +149,17 @@ fn enbaseSelectIndices(
         var entropies = try allocator.alloc(f64, class_indices.items.len);
         defer allocator.free(entropies);
 
+        // MEntropy <- entropy map for the current class.
         for (class_indices.items, 0..) |global_idx, i| {
             const start = global_idx * image_size;
             const end = start + image_size;
             entropies[i] = imageEntropy(images[start..end]);
         }
 
+        // median <- class entropy median.
         const class_median = try median(allocator, entropies);
 
+        // IQualified <- samples with entropy <= median.
         for (class_indices.items, 0..) |global_idx, i| {
             if (entropies[i] <= class_median) {
                 try selected.append(allocator, global_idx);
@@ -221,6 +228,7 @@ pub fn main() !void {
     };
     defer mnist.deinit(allocator);
 
+    // Apply EnBaSe on the training set and report selected subset statistics.
     const image_size = mnist.rows * mnist.cols;
     const selected = try enbaseSelectIndices(allocator, mnist.images, mnist.labels, image_size);
     defer allocator.free(selected);
