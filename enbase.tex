@@ -107,6 +107,55 @@ This approach enables rapid and highly accurate responses in real-time IoT syste
 
 \section{SPATIAL-ENBASE}
 
+\begin{algorithm}[H]
+\label{alg:spatial-enbase}
+\caption{Spatial-EnBaSe: Selection Based on Local Entropy and Structural Information}
+\begin{algorithmic}[1]
+\Require $X_{train}$ (2D image set), $Y_{train}$, $K$ (total number of classes), $W$ (spatial window size)
+\Ensure $X_{selected}, Y_{selected}$ containing the samples with the highest spatial complexity
+\State $X_{selected} \gets \emptyset$
+\State $Y_{selected} \gets \emptyset$
+
+\For{$label \gets 0$ \textbf{to} $K-1$}
+  \State $C \gets$ Retrieve indices belonging to class $label$
+  \State $M_{Score} \gets \emptyset$
+  
+  \For{\textbf{each} $i \in C$}
+    \State $image \gets X_{train}[i]$
+    \State $E_{map} \gets \Call{ComputeLocalEntropy}{image, W}$
+    \State $H_{score} \gets \Call{Mean}{E_{map}}$ \Comment{Mean local entropy quantifies texture/edge richness}
+    \State $M_{Score} \gets M_{Score} \cup \{(i, H_{score})\}$
+  \EndFor
+  
+  \State Sort $M_{Score}$ in descending order by $H_{score}$
+  \State $median \gets$ median of the scores in $M_{Score}$
+  \State $I_{Qualified} \gets \emptyset$
+  
+  \For{\textbf{each} $key \in M_{Score}$}
+    \If{$key.score \ge median$} \Comment{Keep the half with higher spatial information}
+      \State Append $key.index$ to $I_{Qualified}$
+    \EndIf
+  \EndFor
+  
+  \For{\textbf{each} $i \in I_{Qualified}$}
+    \State Append $X_{train}[i]$ to $X_{selected}$
+    \State Append $Y_{train}[i]$ to $Y_{selected}$
+  \EndFor
+\EndFor
+\State \Return $X_{selected}, Y_{selected}$
+
+\Statex
+\Function{ComputeLocalEntropy}{$image, W$}
+  \State $E_{map} \gets$ Empty matrix with the same dimensions as $image$
+  \For{\textbf{each} pixel $(x, y)$ \textbf{in} $image$}
+    \State $P_{x,y} \gets$ Extract a $W \times W$ patch centered at $(x,y)$
+    \State $p \gets$ Probability distribution of pixel intensities in $P_{x,y}$
+    \State $E_{map}[x,y] \gets -\sum_{b} p_b \log_{2}(p_b)$
+  \EndFor
+  \State \Return $E_{map}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
 
 \bibliographystyle{plainnat}
 \bibliography{references}
