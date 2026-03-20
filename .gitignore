@@ -86,4 +86,4 @@ zig-out/
 _minted*/
 
 # PDFs are usually build artifacts (remove this line if you want to version PDFs)
-*.pdf
+# *.pdf
